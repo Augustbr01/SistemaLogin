@@ -6,7 +6,7 @@ app = FastAPI()
 
 # FUNÇÃO QUE CONECTA O BANCO DE DADOS COM A API
 def get_db_connection():
-    conn = sqlite3.connect("users.db")
+    conn = sqlite3.connect("./backend/users.db")
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -26,7 +26,7 @@ def register(username: str, password: str): # Define a função de registro com 
     senhahash = bcrypt.hashpw(password_bytes, salt) # Transforma a senha digitada em senha com hash
 
     try: # Tenta executar
-        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)",(username, senhahash)) # Insere no banco de dados o usuario e senha criptografada
+        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, senhahash)) # Insere no banco de dados o usuario e senha criptografada
         conn.commit() # salva as alterações no banco de dados
         return {"message": f"Usuário {username} registrado com sucesso!"}
     except sqlite3.IntegrityError: # caso tenha um erro de integrity
