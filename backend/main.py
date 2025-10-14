@@ -1,14 +1,65 @@
-from fastapi import FastAPI, HTTPException # Inicializa o fastapi no main.py
+from fastapi import FastAPI, HTTPException, Depends, Response, Request # Inicializa o fastapi no main.py
+from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 import sqlite3 # Inicializa o sqlite3 no main.py
 import bcrypt
+from jose import jwt, JWTError
+from datetime import datetime, timedelta, timezone
+from fastapi.middleware.cors import CORSMiddleware
+
+
 
 app = FastAPI()
 
-# FUNÇÃO QUE CONECTA O BANCO DE DADOS COM A API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://127.0.0.1:5500", "http://localhost:5500"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# FUNÇÃO QUE CONECTA O BANCO DE DADOS COM A API -------------------
 def get_db_connection():
     conn = sqlite3.connect("./backend/users.db")
     conn.row_factory = sqlite3.Row
     return conn
+
+# JSON WEB TOKEN --------------------------------------------------
+
+SECRET_KEY = "IEJWIJFANzCX"
+ALGORITHM = "HS256"
+
+def gerarToken(username: str, response: Response):
+    payload = {
+        "sub": username,
+        "exp": datetime.now(timezone.utc) + timedelta(hours=1)
+    }
+    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=3600
+    )
+
+    return token
+
+def verificarToken(request: Request):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Não autenticado")
+    
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Token Invalido ou expirado!")
+
+# -----------------------------------------------------------------------------------------------------------------------
+
 
 #------------------------------------------------------------------------------------------------------------------------
 
@@ -21,9 +72,8 @@ def register(username: str, password: str): # Define a função de registro com 
         raise HTTPException(status_code=400, detail="Senha deve ter no mínimo 8 caracteres.") # Caso não seja, exibe o erro 400
 
     password_bytes = password.encode('utf-8') # Transforma a senha digitada no registro em bytes
-
     salt = bcrypt.gensalt() # Gera a criptografia que sera usada no hash
-    senhahash = bcrypt.hashpw(password_bytes, salt) # Transforma a senha digitada em senha com hash
+    senhahash = bcrypt.hashpw(password_bytes, salt).decode('utf-8') # Transforma a senha digitada em senha com hash e transforma o hash em string 
 
     try: # Tenta executar
         cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, senhahash)) # Insere no banco de dados o usuario e senha criptografada
@@ -39,10 +89,9 @@ def register(username: str, password: str): # Define a função de registro com 
 #------------------------------------------------------------------------------------------------------------------------
 
 @app.post("/login") # Cria a rota de login
-def login(username: str, password: str): # função com entrada de parametro -> usuario e senha
+def login(username: str, password: str, response: Response): # função com entrada de parametro -> usuario e senha
     conn = get_db_connection() # inicia a conexão com o banco de dados
     cursor = conn.cursor() # inicia o cursor (ponteiro que realmente executa os comandos SQL)
-
     cursor.execute("SELECT password FROM users WHERE username = ?", (username,)) # executa o comando que seleciona o usuario e pega a senha salva desse usuario no DB
     row = cursor.fetchone() # Captura o retorno da execução do cursor
 
@@ -51,10 +100,10 @@ def login(username: str, password: str): # função com entrada de parametro -> 
     else: # se não estiver vazia
         senhaUSER = row["password"] # pega a senha do username do banco de dados (este código com a chave "password" só funciona porque a saida é transformada em row na função get_connection_db())
 
-    password_bytes = password.encode('utf-8') # Transforma a senha digitada pelo usuario no login em bytes (sendo preparada para o check)
+    if bcrypt.checkpw(password.encode('utf-8'), senhaUSER.encode('utf-8')): # checagem da senha digitada no login com a senha real do usuario do banco de dados.
+        token = gerarToken(username, response)
+        return {"message": "Login foi feito! senha igual", "access_token": token, "token_type": "bearer"}
 
-    if bcrypt.checkpw(password_bytes, senhaUSER): # checagem da senha digitada no login com a senha real do usuario do banco de dados.
-        return {"message": "Login foi feito! senha igual"}
     else:
         raise HTTPException(status_code=401, detail="Credenciais Invalidas")
 
@@ -92,8 +141,4 @@ def resetsenha(username: str, new_password: str): # entrada com nome de usuario 
 
     return {"message": f"Senha do usuario {username} resetada com sucesso!"} # Exibe a mensagem de sucesso
        
-    
-
-
-
 
