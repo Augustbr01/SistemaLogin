@@ -78,11 +78,13 @@ def verificarToken(request: Request): # Verifica se tem o token guardado no requ
 
 # -- Classes Pydantic ---------------------------------------------------------------------------------------------------
 class UserRegister(BaseModel): # classe Pydantic para registro
+    email: str
     username: str
     password: str
+    number: int
 
 class UserLogin(BaseModel): # classe Pydantic para login
-    username: str
+    email: str
     password: str
 
 class UserReset(BaseModel): # classe Pydantic para reset de senha
@@ -104,7 +106,7 @@ def register(user: UserRegister): # Define a função de registro com os paramen
     senhahash = bcrypt.hashpw(password_bytes, salt).decode('utf-8') # Transforma a senha digitada em senha com hash e transforma o hash em string 
 
     try: # Tenta executar
-        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (user.username, senhahash)) # Insere no banco de dados o usuario e senha criptografada
+        cursor.execute("INSERT INTO users (email, username, password, number) VALUES (?, ?, ?, ?)", (user.email, user.username, senhahash, user.number)) # Insere no banco de dados o usuario e senha criptografada
         conn.commit() # salva as alterações no banco de dados
         return {"message": f"Usuário {user.username} registrado com sucesso!"}
     except sqlite3.IntegrityError: # caso tenha um erro de integrity
@@ -120,16 +122,20 @@ def register(user: UserRegister): # Define a função de registro com os paramen
 def login(user: UserLogin, response: Response): # função com entrada do formato UserLogin da classe Pydantic
     conn = get_db_connection() # inicia a conexão com o banco de dados
     cursor = conn.cursor() # inicia o cursor (ponteiro que realmente executa os comandos SQL)
-    cursor.execute("SELECT password FROM users WHERE username = ?", (user.username,)) # executa o comando que seleciona o usuario e pega a senha salva desse usuario no DB
+    cursor.execute("SELECT password FROM users WHERE email = ?", (user.email,)) # executa o comando que seleciona o usuario e pega a senha salva desse usuario no DB
     row = cursor.fetchone() # Captura o retorno da execução do cursor
 
     if row is None: # se a linha for vazia
         raise HTTPException(status_code=401, detail="Credenciais Invalidas") # retorna erro de credencial
     else: # se não estiver vazia
         senhaUSER = row["password"] # pega a senha do username do banco de dados (este código com a chave "password" só funciona porque a saida é transformada em row na função get_connection_db())
+     
+    cursor.execute("SELECT username FROM users WHERE email = ?", (user.email,))
+    rowuser = cursor.fetchone()
+    username = rowuser["username"]
 
     if bcrypt.checkpw(user.password.encode('utf-8'), senhaUSER.encode('utf-8')): # checagem da senha digitada no login com a senha real do usuario do banco de dados.
-        token = gerarToken(user.username, response)
+        token = gerarToken(username, response)
         return {"message": "Login foi feito! senha igual", "access_token": token, "token_type": "bearer"}
 
     else:
