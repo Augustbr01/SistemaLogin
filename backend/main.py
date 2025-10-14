@@ -17,39 +17,39 @@ load_dotenv(dotenv_path=env_path) # Carrega a função que puxa as variaveis de 
 
 app = FastAPI()
 
-# ---- CORS -------------------------------------------------------
+# ---- CORS - Front-end separado do backend (servidores diferentes)
 
-app.add_middleware(
+app.add_middleware( # adiciona o mecanismo CORS que permite usar cabeçalho adicional http de servidores diferentes selecionados para se comunicar com o fastapi
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5500", "http://localhost:5500"],
+    allow_origins=["http://127.0.0.1:5500", "http://localhost:5500"], # origens permitidas
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # FUNÇÃO QUE CONECTA O BANCO DE DADOS COM A API -------------------
-def get_db_connection():
-    conn = sqlite3.connect("./backend/users.db")
-    conn.row_factory = sqlite3.Row
-    return conn
+def get_db_connection(): # Abre a conexão com o banco de dados
+    conn = sqlite3.connect("./backend/users.db", timeout=10) 
+    conn.row_factory = sqlite3.Row # organiza a resposta do banco de dados em formato row
+    return conn # retorna a conexão
 
 # JSON WEB TOKEN --------------------------------------------------
 
 SECRET_KEY = os.getenv("SECRET_KEY") # puxa a secret key do arquivo .env carregado pelo load_dotenv
 ALGORITHM = os.getenv("ALGORITHM") # puxa o ALGORITHM do arquivo .env carregado pelo load_dotenv
 
-def gerarToken(username: str, response: Response):
-    payload = {
-        "sub": username,
-        "exp": datetime.now(timezone.utc) + timedelta(hours=1)
+def gerarToken(username: str, response: Response): # Função que gera o token usando o username e pegando emprestado o response( resposta do http request do /login para setar os cookies )
+    payload = { 
+        "sub": username, # campo username que fica dentro do token
+        "exp": datetime.now(timezone.utc) + timedelta(hours=1) # tempo de expiração do token
     }
-    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM) # Gera o token com o payload, a key secreta e o algoritmo
 
-    response.set_cookie(
-        key="access_token",
-        value=token,
-        httponly=True,
-        secure=False,
+    response.set_cookie( # seta o token no cookie do navegador
+        key="access_token", # nome da key 
+        value=token, # valor da key
+        httponly=True, # modo httponly (metodo de segurança para evitar ataques XSS)
+        secure=False, # FAVOR TROCAR QUANDO ESTIVER EM PRODUÇÃO (HTTPS)
         samesite="lax",
         max_age=3600
     )
@@ -63,29 +63,29 @@ def gerarToken(username: str, response: Response):
         max_age=3600
     )
 
-    return token
+    return token # retorna o token no fim da função
 
-def verificarToken(request: Request):
-    token = request.cookies.get("access_token")
-    if not token:
+def verificarToken(request: Request): # Verifica se tem o token guardado no request do navegador
+    token = request.cookies.get("access_token") # captura o token dos cookies e guarda na variavel
+    if not token: # se token não existir
         raise HTTPException(status_code=401, detail="Não autenticado")
     
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
+    try: # se existir
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM]) # decodifica o token usando a key secreta e o algoritmo
+        return payload # retornando o payload onde guardava o username
     except JWTError:
         raise HTTPException(status_code=401, detail="Token Invalido ou expirado!")
 
 # -- Classes Pydantic ---------------------------------------------------------------------------------------------------
-class UserRegister(BaseModel):
+class UserRegister(BaseModel): # classe Pydantic para registro
     username: str
     password: str
 
-class UserLogin(BaseModel):
+class UserLogin(BaseModel): # classe Pydantic para login
     username: str
     password: str
 
-class UserReset(BaseModel):
+class UserReset(BaseModel): # classe Pydantic para reset de senha
     username: str
     new_password: str
 
@@ -117,7 +117,7 @@ def register(user: UserRegister): # Define a função de registro com os paramen
 #------------------------------------------------------------------------------------------------------------------------
 
 @app.post("/login") # Cria a rota de login
-def login(user: UserLogin, response: Response): # função com entrada de parametro -> usuario e senha
+def login(user: UserLogin, response: Response): # função com entrada do formato UserLogin da classe Pydantic
     conn = get_db_connection() # inicia a conexão com o banco de dados
     cursor = conn.cursor() # inicia o cursor (ponteiro que realmente executa os comandos SQL)
     cursor.execute("SELECT password FROM users WHERE username = ?", (user.username,)) # executa o comando que seleciona o usuario e pega a senha salva desse usuario no DB
@@ -147,7 +147,7 @@ def login(user: UserLogin, response: Response): # função com entrada de parame
 #------------------------------------------------------------------------------------------------------------------------
     
 @app.post("/reset-password") # API pra resetar a senha
-def resetsenha(user: UserReset): # entrada com nome de usuario e senha nova
+def resetsenha(user: UserReset): # entrada com user do tipo UserReset (classe pydantic) onde guarda o username e a senha nova
     conn = get_db_connection() ## chama a conexão com o banco de dados
     cursor = conn.cursor() # inicia o cursor (ponteiro que realmente executa os comandos SQL)
 
