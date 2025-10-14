@@ -6,10 +6,18 @@ from jose import jwt, JWTError
 from datetime import datetime, timedelta, timezone
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from dotenv import load_dotenv
+from pathlib import Path
+import os
 
+# Inicio ----------------------------------------------------------
 
+env_path = Path(__file__).parent / ".env" # Manda procurar onde o arquivo .env esta e coloca o caminho na variavel
+load_dotenv(dotenv_path=env_path) # Carrega a função que puxa as variaveis de ambiente do .env
 
 app = FastAPI()
+
+# ---- CORS -------------------------------------------------------
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,8 +35,8 @@ def get_db_connection():
 
 # JSON WEB TOKEN --------------------------------------------------
 
-SECRET_KEY = "IEJWIJFANzCX"
-ALGORITHM = "HS256"
+SECRET_KEY = os.getenv("SECRET_KEY") # puxa a secret key do arquivo .env carregado pelo load_dotenv
+ALGORITHM = os.getenv("ALGORITHM") # puxa o ALGORITHM do arquivo .env carregado pelo load_dotenv
 
 def gerarToken(username: str, response: Response):
     payload = {
@@ -68,8 +76,7 @@ def verificarToken(request: Request):
     except JWTError:
         raise HTTPException(status_code=401, detail="Token Invalido ou expirado!")
 
-# -----------------------------------------------------------------------------------------------------------------------
-
+# -- Classes Pydantic ---------------------------------------------------------------------------------------------------
 class UserRegister(BaseModel):
     username: str
     password: str
@@ -81,7 +88,6 @@ class UserLogin(BaseModel):
 class UserReset(BaseModel):
     username: str
     new_password: str
-
 
 #------------------------------------------------------------------------------------------------------------------------
 
