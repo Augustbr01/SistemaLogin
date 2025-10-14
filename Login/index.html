@@ -13,12 +13,12 @@
             <h1>Log in</h1>
 
             <div class="auth-box">
-                <input id="login-username" placeholder="Username" type="username">
+                <input id="login-username" placeholder="Username" type="username" required>
                 <i class="bx bxs-user"></i>
             </div>
 
             <div class="auth-box">
-                <input id="login-password" placeholder="Password" type="password">
+                <input id="login-password" placeholder="Password" type="password" required>
                 <i class="bx bxs-lock-alt"></i>
             </div>
             
@@ -30,7 +30,9 @@
                 <a href="#">Forgot password</a>
             </div>
 
-            <button type="submit" class="auth-login">Log in</button>
+            <button type="button" class="auth-login" onclick="auth('login')" >Log in</button>
+
+            <p id="sucess"></p>
 
             <div class="auth-sign-up">
                 <p>Don't have an account? <a href="#">Register now</a></p>  
@@ -40,12 +42,12 @@
             <h1>Sign Up</h1>
 
             <div class="auth-box">
-                <input id="register-username" placeholder="Username" type="text">
+                <input id="register-username" placeholder="Username" type="text" required>
                 <i class="bx bxs-user"></i>
             </div>
 
             <div class="auth-box">
-                <input placeholder="Password" type="password">
+                <input id="register-password" placeholder="Password" type="password" required>
                 <i class="bx bxs-lock-alt"></i>
             </div>
             
@@ -61,7 +63,9 @@
                 
             </div>
 
-            <button type="submit" class="auth-login">Register</button>
+            <button type="button" class="auth-login"  onclick="auth('register')">Register</button>
+
+            <p id="error"></p>
 
             <div class="auth-sign-up">
                 <p>Have an account? <a href="#">Login now</a></p>  
