@@ -5,20 +5,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css'rel='stylesheet'> 
-    <link rel="stylesheet" href="/frontend/style.css">
+    <link rel="stylesheet" href="/Login/style.css">
 </head>
 <body>
      <main class="auth">
-        <form class="login"> 
+        <form class="login active">
             <h1>Log in</h1>
 
             <div class="auth-box">
-                <input placeholder="Email address" type="email">
+                <input id="login-username" placeholder="Username" type="username">
                 <i class="bx bxs-user"></i>
             </div>
 
             <div class="auth-box">
-                <input placeholder="Password" type="password">
+                <input id="login-password" placeholder="Password" type="password">
                 <i class="bx bxs-lock-alt"></i>
             </div>
             
@@ -30,7 +30,7 @@
                 <a href="#">Forgot password</a>
             </div>
 
-            <button class="auth-login">Log in</button>
+            <button type="submit" class="auth-login">Log in</button>
 
             <div class="auth-sign-up">
                 <p>Don't have an account? <a href="#">Register now</a></p>  
@@ -40,23 +40,12 @@
             <h1>Sign Up</h1>
 
             <div class="auth-box">
-                <input placeholder="Username" type="text">
-                <i class="bx bxs-user"></i>
-            </div>
-
-
-            <div class="auth-box">
-                <input placeholder="Email address" type="email">
+                <input id="register-username" placeholder="Username" type="text">
                 <i class="bx bxs-user"></i>
             </div>
 
             <div class="auth-box">
                 <input placeholder="Password" type="password">
-                <i class="bx bxs-lock-alt"></i>
-            </div>
-
-            <div class="auth-box">
-                <input placeholder="Confirm Password" type="password">
                 <i class="bx bxs-lock-alt"></i>
             </div>
             
@@ -72,13 +61,13 @@
                 
             </div>
 
-            <button class="auth-login">Register</button>
+            <button type="submit" class="auth-login">Register</button>
 
             <div class="auth-sign-up">
                 <p>Have an account? <a href="#">Login now</a></p>  
             </div>
         </form>   
     </main>
-    <script src="/frontend/index.js"></script>
+    <script src="/Login/index.js"></script>
 </body>
 </html>

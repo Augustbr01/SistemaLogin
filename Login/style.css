@@ -161,20 +161,12 @@ body {
 
 /* Register */
 
-.register {
-    display: none; /* esconde o form register por padrão */
-  }
-
-.active {
-  display: block !important;
-}
-
-.hidden {
-    display: none !important;
-}
-
-
 .login, .register {
+    display: none;
     transition: opacity .3s ease;
 }
 
+.login.active,
+.register.active {
+    display: block;
+}
