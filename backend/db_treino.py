@@ -19,3 +19,7 @@ conn.commit()
 conn.close()
 
 print("Banco criado e usuário inserido com sucesso!")
+
+
+
+
